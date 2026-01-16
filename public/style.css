@@ -1,101 +1,174 @@
-:root{
- --bg:#eef1f6;
- --card:#ffffff;
- --primary:#0a0a0a;
- --accent:#2563ff;
- --border:#000;
+:root {
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --primary: #2563ff;
+  --text: #1e293b;
+  --success: #10b981;
+  --warn: #f59e0b;
+  --fail: #ef4444;
 }
 
-body{
- background:var(--bg);
- margin:0;
- font-family:-apple-system, BlinkMacSystemFont,
- "SF Pro Text","Segoe UI",system-ui;
+body {
+  background: var(--bg);
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* TOP BAR */
-.nav{
- background:linear-gradient(90deg,#0f172a,#000);
- color:white;
- padding:14px;
- text-align:center;
- font-weight:700;
- letter-spacing:.6px;
- box-shadow:0 4px 12px rgba(0,0,0,.2);
+/* TOP NAV */
+.nav {
+  background: #ffffff;
+  color: var(--text);
+  padding: 16px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-/* CARD */
-.card{
- background:var(--card);
- border:1px solid var(--border);
- border-radius:22px;
- padding:22px;
- max-width:420px;
- margin:24px auto;
- transition:.25s;
+/* MAIN CARD */
+.card {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 24px;
+  max-width: 400px;
+  margin: 20px auto;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f5f9;
+  text-align: center;
 }
 
-.card:hover{
- transform:translateY(-2px);
+/* CAMERA CONTAINER (The Pro Wrapper) */
+.cam-wrapper {
+  position: relative;
+  width: 100%;
+  height: 300px; /* Fixed height for consistency */
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
 }
 
-/* INPUTS */
-input,select{
- width:94%;
- padding:12px;
- margin:8px;
- border-radius:14px;
- border:1px solid #000;
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
 }
 
-/* BUTTON */
-button{
- width:96%;
- padding:12px;
- margin:10px 0;
- border-radius:14px;
- border:1px solid #000;
- background:linear-gradient(180deg,#111,#000);
- color:white;
- font-weight:600;
- cursor:pointer;
- transition:.2s;
+/* SCANNER OVERLAY (The Laser) */
+.scan-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 5;
+  background:
+    linear-gradient(to right, #2563ff 2px, transparent 2px) 0 0,
+    linear-gradient(to bottom, #2563ff 2px, transparent 2px) 0 0,
+    linear-gradient(to left, #2563ff 2px, transparent 2px) 100% 0,
+    linear-gradient(to bottom, #2563ff 2px, transparent 2px) 100% 0,
+    linear-gradient(to left, #2563ff 2px, transparent 2px) 100% 100%,
+    linear-gradient(to top, #2563ff 2px, transparent 2px) 100% 100%,
+    linear-gradient(to right, #2563ff 2px, transparent 2px) 0 100%,
+    linear-gradient(to top, #2563ff 2px, transparent 2px) 0 100%;
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  margin: 20px; /* Offset from edges */
 }
 
-button:hover{
- transform:scale(1.02);
+/* The Moving Laser Line */
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: #2563ff;
+  box-shadow: 0 0 10px #2563ff, 0 0 20px #2563ff;
+  animation: scan 2s infinite linear;
+  opacity: 0.8;
 }
 
-/* BADGES */
-.badge{
- padding:6px 10px;
- border-radius:12px;
- font-size:13px;
+@keyframes scan {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
 
-.success{background:#dcfce7;color:#065f46}
-.warn{background:#fef3c7;color:#92400e}
-.fail{background:#fee2e2;color:#7f1d1d}
-
-/* LOADER */
-.loader{
- width:24px;height:24px;
- border:3px solid #eee;
- border-top:3px solid #000;
- border-radius:50%;
- animation:spin .7s linear infinite;
- display:none;margin:auto;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-svg{display:block;margin:10px auto}
-text{font-weight:700}
-.fade{
- animation:fade .6s forwards;
-}
-h3{
- transition:.3s;
+/* METER OVERLAY */
+.meter-overlay {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(8px);
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
 }
 
-#status{
- min-height:24px;
+/* STATUS PILL */
+.status-pill {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 15px;
+  transition: 0.3s;
+}
+
+.status-pill.success { background: #dcfce7; color: #166534; }
+.status-pill.warn { background: #fef3c7; color: #b45309; }
+.status-pill.fail { background: #fee2e2; color: #991b1b; }
+
+/* BUTTONS */
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* FINGERPRINT ANIMATIONS */
+.fp-ring img {
+  filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+  transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fp-active {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 15px rgba(37, 99, 255, 0.4)) !important;
+}
+
+.scanning {
+  display: block !important;
+  animation: biomet-scan 1.5s infinite alternate;
+}
+
+@keyframes biomet-scan {
+  from { top: 0%; opacity: 0.6; }
+  to { top: 100%; opacity: 1; }
 }

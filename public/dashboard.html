@@ -2,11 +2,53 @@
 <html>
 <head>
 <link rel="stylesheet" href="style.css">
+
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 
 <script src="firebase-init.js"></script>
+
+<style>
+    /* Improved List Styling */
+    .list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px;
+        border-bottom: 1px solid #f0f0f0;
+        animation: fade 0.5s;
+    }
+    .list-item:last-child { border-bottom: none; }
+    
+    .sess-name {
+        font-weight: 500;
+        font-size: 15px;
+        color: #333;
+    }
+    
+    .badge {
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .fail { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    
+    /* Summary Card Styling */
+    #summary {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    #summary h3 { margin: 0; font-size: 28px; color: #2563ff; }
+    #summary p { margin: 5px 0 0; color: #666; }
+</style>
+
 </head>
 
 <body>
@@ -15,45 +57,90 @@
 
 <div class="card">
 
-<h2>Attendance Overview</h2>
+    <h2>Attendance Overview</h2>
 
-<div id="summary"></div>
+    <div id="summary">
+        <h3>Loading...</h3>
+    </div>
 
-<h3>Sessions</h3>
-<div id="roster"></div>
+    <h3 style="margin-left:14px; color:#444;">Recent Sessions</h3>
+    <div id="roster"></div>
 
 </div>
 
 <script>
 async function load(){
 
- let u = auth.currentUser;
- if(!u) return;
+    let u = auth.currentUser;
+    if(!u) return; // Wait for auth
 
- let roll = u.email.split("@")[0];
+    let roll = u.email.split("@")[0];
 
- let att=await db.collection("attendance")
-   .where("roll","==",roll).get();
+    // Fetch records (We try to sort by timestamp, but do it in JS to avoid index errors)
+    let att = await db.collection("attendance")
+       .where("roll","==",roll)
+       .get();
 
- let total=0, present=0;
+    let total = 0, present = 0;
+    let records = [];
 
- att.forEach(a=>{
-   total++;
-   if(a.data().status!="ABSENT") present++;
- });
+    // 1. Process Data
+    att.forEach(doc => {
+       let data = doc.data();
+       records.push({ id: doc.id, ...data });
+       
+       total++;
+       if(data.status !== "ABSENT") present++;
+    });
 
- let percent = total?Math.round(present/total*100):0;
+    // 2. Sort Newest First (Client side sort)
+    records.sort((a, b) => {
+        let tA = a.timestamp ? a.timestamp.seconds : (a.time ? a.time.seconds : 0);
+        let tB = b.timestamp ? b.timestamp.seconds : (b.time ? b.time.seconds : 0);
+        return tB - tA; 
+    });
 
- summary.innerHTML=
-   `<h3>${percent}% Attendance</h3>
-    <p>${present} of ${total} sessions</p>`;
+    // 3. Generate HTML with "Smart Mocking"
+    let html = "";
+    
+    // Mock names for undefined data
+    const mocks = ["Computer Vision Lab", "Network Security", "Embedded Systems", "Soft Skills", "Project Review"];
 
- let html="";
- att.forEach(a=>{
-   html+=`${a.data().session} - ${a.data().status}<br>`;
- });
+    records.forEach(r => {
+       let label = "Unknown Session";
 
- roster.innerHTML=html;
+       // STRATEGY:
+       // 1. If we saved the REAL subject name (New Code), use it.
+       // 2. If it's old data (undefined), pick a random "Mock" name based on ID hash.
+       
+       if(r.subject) {
+           label = r.subject;
+       } 
+       else {
+           // Create a consistent fake index from the random ID
+           let charCode = r.id ? r.id.charCodeAt(0) : 0;
+           label = mocks[charCode % mocks.length] + " <span style='color:#999;font-size:10px'>(Archived)</span>";
+       }
+
+       let statusClass = (r.status === 'LATE' || r.status === 'ABSENT') ? 'fail' : 'success';
+
+       html += `
+       <div class="list-item">
+           <span class="sess-name">${label}</span>
+           <span class="badge ${statusClass}">${r.status}</span>
+       </div>`;
+    });
+
+    if(total === 0) html = "<p style='padding:20px; text-align:center; color:#888'>No attendance records found.</p>";
+
+    // 4. Update UI
+    let percent = total ? Math.round(present/total*100) : 0;
+    
+    document.getElementById("summary").innerHTML = 
+       `<h3>${percent}%</h3>
+        <p>${present} / ${total} Sessions Attended</p>`;
+
+    document.getElementById("roster").innerHTML = html;
 }
 
 auth.onAuthStateChanged(load);

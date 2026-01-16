@@ -37,6 +37,7 @@
 <p class="step" id="s1"></p>
 <p class="step" id="s2"></p>
 <p class="step" id="s3"></p>
+<p class="step" id="s4"></p> 
 
 </div>
 
@@ -44,9 +45,9 @@
 
 // --- CONFIGURATION ---
 // REPLACE THESE WITH YOUR COLLEGE COORDINATES
-const COLLEGE_LAT = 19.0760; // Example: Mumbai
-const COLLEGE_LNG = 72.8777; 
-const ALLOWED_RADIUS = 2000; // Meters (Set strictly like 500m for production)
+const COLLEGE_LAT = 19.254615; // Example: Mumbai
+const COLLEGE_LNG = 72.866161; 
+const ALLOWED_RADIUS = 20000; // Increased for testing (20km). Set to 500 for prod.
 
 // --- GEOMETRY UTILS ---
 function getDist(lat1, lon1, lat2, lon2) {
@@ -69,7 +70,8 @@ function deg2rad(deg) {
 function checkLocation(){
     return new Promise((resolve, reject)=>{
         if(!navigator.geolocation){
-            alert("Geolocation not supported by this browser.");
+            // If browser blocks geo, we assume false for security
+            alert("Geolocation not supported. Attendance blocked.");
             resolve(false);
             return;
         }
@@ -85,7 +87,8 @@ function checkLocation(){
                 resolve(false);
             }
         }, (err)=>{
-            alert("Location permission required.");
+            // If user clicks "Block" on location popup
+            alert("Location permission denied. Cannot verify attendance.");
             resolve(false);
         }, {enableHighAccuracy:true});
     });
@@ -106,17 +109,19 @@ async function run(){
  // INTELLIGENT CHECK AT STEP 0
  if(i==0){
     let allowed = await checkLocation();
-    // If not allowed, we stop here (in production). 
-    // For testing, we might just warn.
+    
+    // Logic: If not allowed, stop the loading screen here.
     if(!allowed) {
         document.getElementById("msg").innerText = "LOCATION CHECK FAILED";
         document.querySelector(".loader").style.display="none";
-        return; 
+        document.getElementById("msg").style.color = "red";
+        return; // STOP EXECUTION
     }
  }
 
  if(i<steps.length){
    document.getElementById("msg").innerText=steps[i];
+   // This line was crashing because s4 didn't exist
    document.getElementById("s"+(i+1)).innerText="✔ "+steps[i];       
    i++;
    setTimeout(run,900);

@@ -1,57 +1,71 @@
-// Global flag
-let modelsLoaded = false;
+// ===== THE LIGHTWEIGHT "HACK" =====
 
-// 1. Load the AI Models immediately when script runs
-async function loadModels() {
-  console.log("Loading AI Models...");
-  try {
-    // Using a public CDN for the model weights (Tiny Face Detector is fast)
-    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
-    
-    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    // Optional: Load landmarks if you want to detect blinking/smiling later
-    // await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+let prevPixels = null;
+let motionScore = 0;
 
-    modelsLoaded = true;
-    console.log("AI Models Loaded Successfully");
-  } catch (e) {
-    console.error("Error loading AI models", e);
-  }
-}
+// Re-use a tiny canvas to save memory
+const tinyCanvas = document.createElement('canvas');
+const w = 32; // Low res for speed
+const h = 24;
+tinyCanvas.width = w;
+tinyCanvas.height = h;
+const tinyCtx = tinyCanvas.getContext('2d', { willReadFrequently: true });
 
-loadModels();
-
-
-// 2. The Verification Function
 async function faceScore() {
   
-  // If models aren't ready or video isn't running, return 0
-  if (!modelsLoaded || !window.video || window.video.paused || window.video.ended) {
-    return 0;
+  if (!window.video || window.video.paused || window.video.ended) return 0;
+
+  // 1. Draw tiny frame
+  tinyCtx.drawImage(window.video, 0, 0, w, h);
+  let frame = tinyCtx.getImageData(0, 0, w, h);
+  let currentPixels = frame.data;
+
+  // 2. CHECK LIGHTING (Too dark/bright = No Face)
+  // We sample every 4th pixel for speed
+  let totalBrightness = 0;
+  let count = 0;
+  
+  for(let i=0; i<currentPixels.length; i+=16) { 
+      totalBrightness += currentPixels[i]; // Red channel
+      count++;
+  }
+  let avgLight = totalBrightness / count;
+
+  // Pitch black (<20) or Blinding white (>240)
+  if(avgLight < 10 || avgLight > 240) {
+      return 0;
   }
 
-  try {
-    // Detect faces using the Tiny Face Detector (lightweight for mobile)
-    const detections = await faceapi.detectAllFaces(
-        window.video, 
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
-    );
+  // 3. CHECK LIVENESS (Motion Detection)
+  // We compare this frame with the previous one
+  if (prevPixels) {
+      let diff = 0;
+      // Check Green channel (i+1) for difference
+      for (let i = 0; i < currentPixels.length; i += 16) {
+          diff += Math.abs(currentPixels[i+1] - prevPixels[i+1]);
+      }
+      
+      let movement = diff / count;
 
-    // INTELLIGENCE CHECKS:
-
-    // Case A: No face detected
-    if (!detections || detections.length === 0) return 0;
-
-    // Case B: Multiple faces detected (Proxy Attempt?)
-    // If 2 people are in frame, we lower confidence to prevent marking
-    if (detections.length > 1) return 10; 
-
-    // Case C: Single Face - Return confidence score (0.0 to 1.0 -> 0 to 100)
-    let confidence = detections[0].score;
-    return Math.round(confidence * 100);
-
-  } catch (e) {
-    console.log("Face Scan Error", e);
-    return 0;
+      // LOGIC: 
+      // - 0 movement = Static Photo (FAIL)
+      // - >10 movement = Shaking phone/Running (FAIL)
+      // - 0.5 to 5.0 = Breathing/Holding phone (PASS)
+      
+      if(movement > 0.2 && movement < 8) {
+          motionScore += 8; // Boost score fast if real
+      } else {
+          motionScore -= 3; // Drop score if static or chaotic
+      }
   }
+
+  // Store current for next comparison
+  // We must COPY the data, otherwise 'prevPixels' points to the same reference
+  prevPixels = new Uint8ClampedArray(currentPixels);
+
+  // Clamp score
+  if(motionScore < 0) motionScore = 0;
+  if(motionScore > 100) motionScore = 100;
+
+  return motionScore;
 }

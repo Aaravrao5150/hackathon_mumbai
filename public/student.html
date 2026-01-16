@@ -1,60 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Secure Access</title>
 <link rel="stylesheet" href="style.css">
 
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-
 <script src="firebase-init.js"></script>
-
-<script src="https://docs.opencv.org/4.8.0/opencv.js"></script>     
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
+<script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady()" type="text/javascript"></script>
 </head>
 
 <body>
 
-<div class="nav">SMART ATTENDANCE SYSTEM</div>
+<div class="nav">CAMPUS ACCESS CONTROL</div>
 
 <div class="card">
 
-<h2>ID Verification</h2>
+    <h2 style="margin:0 0 8px 0; font-size:18px;">Identity Verification</h2>
+    <p style="margin:0 0 20px 0; font-size:13px; color:#64748b;">Align Face & ID Card within frame</p>
 
-<div style="position:relative">
-<svg width="140" height="140" viewBox="0 0 36 36">
-  <path d="M18 2.0845
-    a 15.9155 15.9155 0 0 1 0 31.831
-    a 15.9155 15.9155 0 0 1 0 -31.831"
-    fill="none" stroke="#eee" stroke-width="3"/>
-  <path id="ring"
-    stroke-dasharray="0,100"
-    d="M18 2.0845
-    a 15.9155 15.9155 0 0 1 0 31.831
-    a 15.9155 15.9155 0 0 1 0 -31.831"
-    fill="none" stroke="#000" stroke-width="3"/>
-  <text id="percent" x="18" y="20"
-    text-anchor="middle" font-size="6">0%</text>
-</svg>
+    <div id="cam-section">
+        
+        <div class="cam-wrapper">
+            <video id="video" autoplay playsinline muted></video>
+            
+            <div class="scan-overlay">
+                <div class="scan-line"></div>
+            </div>
 
-<button onclick="resetScan()"
- style="position:absolute;top:0;right:0;
- width:32px;height:32px;border-radius:50%">↻</button>
-</div>
+            <div id="meter-container" class="meter-overlay">
+                <svg width="50" height="50" viewBox="0 0 36 36">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none" stroke="#e2e8f0" stroke-width="4"/>
+                    <path id="ring" stroke-dasharray="0,100"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+                <div id="percent" style="position:absolute; top:18px; left:0; width:100%; text-align:center; font-size:10px; font-weight:700;">0%</div>
+            </div>
+        </div>
 
-<p style="font-weight:600;margin-top:6px">ATTENDANCE</p>
+        <canvas id="canvas" hidden></canvas>
+        <div class="loader" id="load"></div>
+    </div>
 
-<video id="video" autoplay playsinline style="width:100%"></video>      
-<canvas id="canvas" hidden></canvas>
 
-<div class="loader" id="load"></div>
+    <div id="fp-container" style="display:none; padding:30px 0; animation:fade 0.4s;">
+        
+        <div class="fp-ring" style="position:relative; width:90px; height:90px; margin:0 auto; cursor:pointer;" onclick="scanFinger()">
+            <img src="https://img.icons8.com/ios-filled/100/2563ff/fingerprint.png" 
+                 style="width:100%; opacity:0.8;" id="fp-icon">
+            
+            <div id="fp-scan-bar" style="
+              position:absolute; top:0; left:0; width:100%; height:3px; 
+              background:#2563ff; display:none; box-shadow:0 0 15px #2563ff; border-radius:2px;">
+            </div>
+        </div>
+        
+        <h3 style="margin:20px 0 5px 0; font-size:16px;">Biometric Required</h3>
+        <p style="font-size:13px; color:#64748b; margin:0;">Tap sensor to finalize authentication</p>
+        <p id="fp-msg" style="font-size:12px; font-weight:600; margin-top:15px; min-height:18px;"></p>
+    </div>
 
-<h3 id="status">Waiting...</h3>
 
-<button onclick="start()">Start Camera</button>
+    <div id="status" class="status-pill">System Initializing...</div>
 
-<a href="dashboard.html">My Attendance</a>
+    <button id="startBtn" onclick="start()" disabled>Loading AI Models...</button>
+
+    <div style="margin-top:20px; padding-top:15px; border-top:1px solid #f1f5f9;">
+        <a href="dashboard.html" style="text-decoration:none; font-size:13px; color:#2563ff; font-weight:600;">View History</a>
+        <span style="color:#cbd5e1; margin:0 8px;">|</span>
+        <button onclick="resetScan()" style="width:auto; padding:6px 12px; font-size:12px; background:transparent; color:#64748b; margin:0; border:1px solid #e2e8f0;">Reset</button>
+    </div>
 
 </div>
 
@@ -62,9 +81,16 @@
 <script src="app.js"></script>
 
 <script>
-function start(){
- load.style.display="block";
- startCamera();
+function onOpenCvReady() {
+    console.log("OpenCV Ready");
+    const btn = document.getElementById("startBtn");
+    btn.disabled = false;
+    btn.innerText = "START SCAN";
+    btn.style.background = "#2563ff"; // Highlight button when ready
+    btn.onclick = function() {
+        document.getElementById("load").style.display="block";
+        startCamera();
+    };
 }
 </script>
 
