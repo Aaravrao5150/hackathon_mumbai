@@ -8,7 +8,6 @@ const app=firebase.initializeApp({
 const auth = firebase.auth();
 
 function login(){
-
  auth.signInWithEmailAndPassword(
    email.value,
    pass.value
