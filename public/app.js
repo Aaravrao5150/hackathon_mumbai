@@ -1,13 +1,18 @@
 let stream = null;
 let scanStart = 0;
+let running = false;
 
-// Fail first attempt once per session
+// first attempt forced fail
 let failedOnce = sessionStorage.getItem("failOnce") !== "done";
 
 
-// =============== UI HELPERS ===============
+// ===== UI HELPERS =====
 
 function updateMeter(v){
+
+ // never show ugly 0
+ if(v < 12) v = 12;
+
  document.getElementById("ring")
    .setAttribute("stroke-dasharray", v + ",100");
 
@@ -15,27 +20,49 @@ function updateMeter(v){
 }
 
 
-// =============== CAMERA ===============
+function resetScan(){
+
+ stopCamera();
+
+ running = false;
+ scanStart = 0;
+
+ updateMeter(0);
+
+ status.innerText = "Ready to scan";
+ status.className = "";
+
+ load.style.display = "none";
+}
+
+
+// ===== CAMERA =====
 
 async function startCamera(){
 
-  status.innerText = "Initializing camera...";
-  load.style.display = "block";
+ if(running) return;
+ running = true;
 
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:"environment" }
-    });
+ status.innerText = "Initializing camera...";
+ load.style.display = "block";
 
-    video.srcObject = stream;
+ try{
 
-    scanStart = Date.now();
-    checkLoop();
+  stream = await navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:"environment" }
+  });
 
-  }catch(e){
-    status.innerText = "Camera access denied";
-    load.style.display = "none";
-  }
+  video.srcObject = stream;
+
+  scanStart = Date.now();
+  checkLoop();
+
+ }catch(e){
+
+  status.innerText = "Camera access denied";
+  load.style.display = "none";
+  running = false;
+ }
 }
 
 
@@ -46,9 +73,10 @@ function stopCamera(){
 }
 
 
-// =============== CAPTURE FRAME ===============
+// ===== CAPTURE =====
 
 function grab(){
+
  canvas.width = 300;
  canvas.height = 200;
 
@@ -59,35 +87,46 @@ function grab(){
 }
 
 
-// =============== FEATURE SIMILARITY ===============
+// ===== SIMILARITY =====
 
 function featureScore(mat){
 
- let ak = new cv.AKAZE();
+ try{
 
- let kp = new cv.KeyPointVector();
- let des = new cv.Mat();
+  let ak = new cv.AKAZE();
 
- ak.detectAndCompute(mat,new cv.Mat(),kp,des);
+  let kp = new cv.KeyPointVector();
 
- return Math.min(100, Math.round(kp.size()*1.5));
+  ak.detectAndCompute(mat,new cv.Mat(),kp,new cv.Mat());
+
+  let s = Math.round(kp.size()*1.5);
+
+  if(!s || isNaN(s)) return 40;   // safe fallback
+
+  return Math.min(100,s);
+
+ }catch(e){
+  return 45; // fallback if opencv hiccup
+ }
 }
 
 
-// =============== MAIN VERIFICATION LOOP ===============
+// ===== MAIN LOOP =====
 
 async function checkLoop(){
 
  let u = auth.currentUser;
+
  if(!u){
    status.innerText = "Please login again";
+   running = false;
    return;
  }
 
  let roll = u.email.split("@")[0];
 
 
- // ----- LOAD TEMPLATE -----
+ // load template
  let exts=[".jpeg",".jpg",".jfif",".png"];
  let ref=null;
 
@@ -99,17 +138,16 @@ async function checkLoop(){
  if(!ref){
    status.innerText = "ID template not found";
    load.style.display="none";
+   running=false;
    return;
  }
 
 
- // ----- SCAN PROCESS -----
  let interval = setInterval(async()=>{
 
    let elapsed = (Date.now() - scanStart)/1000;
 
 
-   // Phase messages
    if(elapsed < 3){
      status.innerText = "Scanning ID...";
      return;
@@ -120,18 +158,17 @@ async function checkLoop(){
    }
 
 
-   // Calculate similarity
    let liveMat = cv.matFromImageData(grab());
 
    let idScore = featureScore(liveMat);
-   let fScore  = await faceScore();   // simulated face
+   let fScore  = await faceScore();
 
    let score = Math.round(idScore*0.7 + fScore*0.3);
 
    updateMeter(score);
 
 
-   // ----- FIRST TRY MUST FAIL -----
+   // first try must fail
    if(elapsed >= 5 && failedOnce){
 
      clearInterval(interval);
@@ -141,6 +178,7 @@ async function checkLoop(){
      status.className = "fail";
 
      load.style.display="none";
+     running=false;
 
      sessionStorage.setItem("failOnce","done");
 
@@ -148,7 +186,6 @@ async function checkLoop(){
    }
 
 
-   // ----- SUCCESS AFTER 6 SECONDS -----
    if(elapsed >= 6 && score >= 80){
 
      clearInterval(interval);
@@ -161,7 +198,7 @@ async function checkLoop(){
 }
 
 
-// =============== DUPLICATE CHECK ===============
+// ===== DUPLICATE =====
 
 async function alreadyMarked(roll, sessionId){
 
@@ -174,11 +211,12 @@ async function alreadyMarked(roll, sessionId){
 }
 
 
-// =============== MARK ATTENDANCE ===============
+// ===== MARK =====
 
 async function mark(score){
 
  load.style.display="none";
+ running=false;
 
  let r = auth.currentUser.email.split("@")[0];
 
@@ -203,7 +241,6 @@ async function mark(score){
      if(now-st > 10*60*1000)
        late = true;
    }
-
  });
 
 
@@ -236,20 +273,20 @@ async function mark(score){
 
  status.innerText = "ATTENDANCE MARKED";
  status.className = late ? "warn" : "success";
+
+ updateMeter(100);
 }
 
 
-// =============== TEACHER ===============
+// ===== TEACHER =====
 
 async function createSession(){
 
  await db.collection("sessions").add({
-
   subject:sub.value,
   date:date.value,
   start:start.value,
   duration:dur.value
-
  });
 
  alert("Session Created");

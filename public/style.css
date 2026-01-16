@@ -89,3 +89,6 @@ button:hover{
 @keyframes spin{to{transform:rotate(360deg)}}
 svg{display:block;margin:10px auto}
 text{font-weight:700}
+.fade{
+ animation:fade .6s forwards;
+}

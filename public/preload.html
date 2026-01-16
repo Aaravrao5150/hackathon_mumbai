@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+
+<style>
+#box{
+  text-align:center;
+  margin-top:60px;
+  opacity:0;
+  animation:fade .6s forwards;
+}
+
+@keyframes fade{
+ from{opacity:0}
+ to{opacity:1}
+}
+
+.step{
+ margin:12px;
+ font-weight:600;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="nav">SMART ATTENDANCE SYSTEM</div>
+
+<div class="card" id="box">
+
+<h3 id="msg">Initializing secure session…</h3>
+
+<div class="loader" style="display:block"></div>
+
+<p class="step" id="s1"></p>
+<p class="step" id="s2"></p>
+<p class="step" id="s3"></p>
+
+</div>
+
+<script>
+
+let steps=[
+ "Ensuring GPS location integrity",
+ "Checking browser security",
+ "Validating device profile",
+ "Loading attendance services"
+];
+
+let i=0;
+
+function run(){
+
+ if(i<steps.length){
+   document.getElementById("msg").innerText=steps[i];
+   document.getElementById("s"+(i+1)).innerText="✔ "+steps[i];
+   i++;
+   setTimeout(run,900);
+ }
+ else{
+   setTimeout(()=>{
+     document.getElementById("box").style.opacity=0;
+
+     setTimeout(()=>{
+       location="student.html";
+     },600);
+
+   },800);
+ }
+}
+
+setTimeout(run,800);
+
+</script>
+
+</body>
+</html>

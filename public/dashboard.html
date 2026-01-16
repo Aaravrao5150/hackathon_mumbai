@@ -27,8 +27,10 @@
 <script>
 async function load(){
 
- let u=auth.currentUser;
- let roll=u.email.split("@")[0];
+ let u = auth.currentUser;
+ if(!u) return;
+
+ let roll = u.email.split("@")[0];
 
  let att=await db.collection("attendance")
    .where("roll","==",roll).get();
