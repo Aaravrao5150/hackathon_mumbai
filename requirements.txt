@@ -5,3 +5,4 @@ pyzbar
 numpy
 pandas
 cryptography
+scikit-image

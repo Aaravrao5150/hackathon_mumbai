@@ -1,6 +1,28 @@
-<h2>Analytics</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Analytics</title>
 
+<style>
+body{background:#0e0f14;color:white;font-family:system-ui}
+
+.box{
+ background:#161b22;
+ padding:20px;
+ margin:20px;
+ border-radius:12px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>📊 Attendance Analytics</h2>
+
+<div class="box">
 <canvas id="c"></canvas>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -9,16 +31,27 @@ fetch('/stats')
 .then(r=>r.json())
 .then(d=>{
 
- labels = d.map(x=>x[0])
- vals = d.map(x=>x[1])
+ let labels=[]
+ let vals=[]
+
+ d.forEach(x=>{
+   labels.push(x[0]+"-"+x[1])
+   vals.push(x[2])
+ })
 
  new Chart(document.getElementById("c"),{
    type:'bar',
    data:{
      labels:labels,
-     datasets:[{label:'Records', data:vals}]
+     datasets:[{
+        label:'Records',
+        data:vals,
+        backgroundColor:'#00ffaa'
+     }]
    }
  })
-
 })
 </script>
+
+</body>
+</html>

@@ -1,18 +1,88 @@
-<h2>Smart Attendance</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Attendance</title>
 
-<button onclick="mark()">Mark Attendance</button>
+<style>
+body{
+  background:#0e0f14;
+  color:white;
+  font-family:system-ui;
+  text-align:center;
+}
 
+.card{
+  background:#161b22;
+  padding:20px;
+  margin:40px auto;
+  width:420px;
+  border-radius:14px;
+  box-shadow:0 0 20px #00ffaa22;
+}
+
+input{
+  padding:10px;
+  width:80%;
+  border-radius:8px;
+  border:none;
+  margin:10px;
+}
+
+button{
+  padding:10px 20px;
+  background:#00ffaa;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+}
+
+#status{
+  font-size:22px;
+  margin-top:10px;
+}
+
+.success{color:#00ff99}
+.fail{color:#ff4b4b}
+.warn{color:#ffcc00}
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+<h2>🎓 Intelligent Attendance</h2>
+
+<input id="roll" placeholder="Enter Roll (101 / 102)">
+<button onclick="start()">Start Verification</button>
+
+<div id="status"></div>
 <pre id="out"></pre>
 
-<a href="/dashboard">View Dashboard</a>
+<a href="/stats" style="color:#00ffaa">View Dashboard →</a>
+</div>
 
 <script>
-function mark(){
- fetch('/mark',{method:'POST'})
- .then(r=>r.json())
+function start(){
+ let r=document.getElementById("roll").value
+
+ fetch('/start/'+r)
+ .then(x=>x.json())
  .then(d=>{
-   document.getElementById('out').innerText =
+
+   let s=document.getElementById("status")
+
+   s.innerText=d.status
+
+   s.className=
+     d.status=="SUCCESS"?"success":
+     d.status=="SUSPICIOUS"?"warn":"fail"
+
+   document.getElementById("out").innerText=
      JSON.stringify(d,null,2)
  })
 }
 </script>
+
+</body>
+</html>

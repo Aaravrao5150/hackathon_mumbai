@@ -1,18 +1,17 @@
-from flask import Flask, render_template, jsonify
-import sqlite3, datetime, os, sys
+from flask import Flask, render_template, jsonify, request
+import sqlite3, datetime, os, sys, random
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from services.id_service import scan_id
+from services.id_service import scan_id_for
 from services.face_service import verify_face
-from services.fingerprint_service import verify_fingerprint
 from services.fusion_service import evaluate
-from security.liveness import check
 
 app = Flask(__name__, template_folder="../frontend/templates")
 
 DB = os.path.join(os.path.dirname(__file__), "database.db")
 
+# -------- DATABASE --------
 
 def init_db():
     con = sqlite3.connect(DB)
@@ -26,6 +25,21 @@ def init_db():
     """)
     con.commit()
 
+    # ---- MOCK DATA ----
+    cur = con.execute("SELECT COUNT(*) FROM logs")
+    if cur.fetchone()[0] == 0:
+        for s in ["101","102"]:
+            for i in range(6):
+                con.execute(
+                    "INSERT INTO logs VALUES (?,?,?,?)",
+                    (
+                        s,
+                        str(datetime.datetime.now() - datetime.timedelta(days=i)),
+                        random.choice(["SUCCESS","SUSPICIOUS","FAIL"]),
+                        "mock record"
+                    )
+                )
+        con.commit()
 
 def log(student, status, reason):
     con = sqlite3.connect(DB)
@@ -35,30 +49,26 @@ def log(student, status, reason):
     )
     con.commit()
 
+# -------- ROUTES --------
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
+@app.route("/start/<student>")
+def start(student):
 
-@app.route("/mark", methods=["POST"])
-def mark():
+    id_data = scan_id_for(student)
 
-    id_data = scan_id()
+    if id_data is None:
+        return jsonify({"status":"FAIL","reason":"ID not matched","student":student})
 
-    face = False
-    if id_data and "id" in id_data:
-        face = verify_face()
+    if isinstance(id_data, dict) and "error" in id_data:
+        return jsonify({"status":"FAIL","reason":id_data["error"],"student":student})
 
-    finger = verify_fingerprint(
-        id_data["id"] if id_data and "id" in id_data else None
-    )
+    face = verify_face()
 
-    live = check()
-
-    result, reason = evaluate(face, id_data, finger, live)
-
-    student = id_data["id"] if id_data and "id" in id_data else "UNKNOWN"
+    result, reason = evaluate(face, id_data, False, True)
 
     log(student, result, reason)
 
@@ -68,20 +78,17 @@ def mark():
         "student": student
     })
 
-
 @app.route("/stats")
 def stats():
-
     con = sqlite3.connect(DB)
 
-    data = con.execute("""
-        SELECT status, COUNT(*)
+    rows = con.execute("""
+        SELECT student,status,COUNT(*)
         FROM logs
-        GROUP BY status
+        GROUP BY student,status
     """).fetchall()
 
-    return jsonify(data)
-
+    return jsonify(rows)
 
 if __name__ == "__main__":
     init_db()
