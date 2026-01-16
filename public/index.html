@@ -6,26 +6,26 @@
 
 <body>
 
-<div class="topbar">SMART ATTENDANCE SYSTEM</div>
+<div class="nav">SMART ATTENDANCE SYSTEM</div>
 
 <div class="card">
-
 <h2>Select Role</h2>
 
 <select id="role">
-  <option value="student">Student</option>
-  <option value="teacher">Teacher</option>
+ <option value="student">Student</option>
+ <option value="teacher">Teacher</option>
 </select>
 
 <button onclick="go()">Continue</button>
-
 </div>
 
 <script>
 function go(){
- let r = role.value;
- location = r=="student" ? "student.html" : "teacher.html";
+ localStorage.setItem("role",role.value);
+ location="login.html";
 }
+</script>
+
 </script>
 
 </body>

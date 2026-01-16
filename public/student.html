@@ -8,21 +8,33 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
 <script src="firebase-init.js"></script>
-
 <script src="https://docs.opencv.org/4.8.0/opencv.js"></script>
 </head>
 
 <body>
 
-<div class="topbar">SMART ATTENDANCE SYSTEM</div>
+<div class="nav">SMART ATTENDANCE SYSTEM</div>
 
 <div class="card">
 
 <h2>ID Verification</h2>
 
-<video id="video" autoplay playsinline
- style="width:100%;border-radius:14px"></video>
+<!-- METER RING -->
+<svg width="140" height="140" viewBox="0 0 36 36" style="margin:auto">
+  <path d="M18 2.0845
+      a 15.9155 15.9155 0 0 1 0 31.831
+      a 15.9155 15.9155 0 0 1 0 -31.831"
+    fill="none" stroke="#eee" stroke-width="3"/>
+  <path id="ring"
+    stroke-dasharray="0,100"
+    d="M18 2.0845
+      a 15.9155 15.9155 0 0 1 0 31.831
+      a 15.9155 15.9155 0 0 1 0 -31.831"
+    fill="none" stroke="#000" stroke-width="3"/>
+  <text id="percent" x="18" y="20" text-anchor="middle" font-size="6">0%</text>
+</svg>
 
+<video id="video" autoplay playsinline style="width:100%"></video>
 <canvas id="canvas" hidden></canvas>
 
 <div class="loader" id="load"></div>

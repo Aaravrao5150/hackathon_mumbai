@@ -1,98 +1,91 @@
-/* ===== GLOBAL ===== */
+:root{
+ --bg:#eef1f6;
+ --card:#ffffff;
+ --primary:#0a0a0a;
+ --accent:#2563ff;
+ --border:#000;
+}
+
 body{
- background:#f2f3f7;
- color:#0a0a0a;
- font-family:-apple-system, BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui;
+ background:var(--bg);
  margin:0;
- animation:fadeIn .4s ease;
+ font-family:-apple-system, BlinkMacSystemFont,
+ "SF Pro Text","Segoe UI",system-ui;
 }
 
-@keyframes fadeIn{
- from{opacity:0}
- to{opacity:1}
-}
-
-/* ===== TOP BAR ===== */
-.topbar{
- background:#fff;
- border-bottom:1px solid #000;
+/* TOP BAR */
+.nav{
+ background:linear-gradient(90deg,#0f172a,#000);
+ color:white;
  padding:14px;
+ text-align:center;
  font-weight:700;
  letter-spacing:.6px;
- text-align:center;
- position:sticky;
- top:0;
+ box-shadow:0 4px 12px rgba(0,0,0,.2);
 }
 
-/* ===== CARD ===== */
+/* CARD */
 .card{
- background:linear-gradient(180deg,#ffffff,#fafafa);
- border:1px solid #000;
- box-shadow:0 10px 25px rgba(0,0,0,.08);
- padding:24px;
+ background:var(--card);
+ border:1px solid var(--border);
  border-radius:22px;
+ padding:22px;
  max-width:420px;
- margin:30px auto;
- transition:.25s ease;
+ margin:24px auto;
+ transition:.25s;
 }
 
 .card:hover{
  transform:translateY(-2px);
 }
 
-/* ===== INPUTS ===== */
+/* INPUTS */
 input,select{
- width:92%;
- padding:13px;
+ width:94%;
+ padding:12px;
  margin:8px;
  border-radius:14px;
  border:1px solid #000;
- background:#fff;
- transition:.2s;
 }
 
-input:focus,select:focus{
- outline:none;
- box-shadow:0 0 0 3px rgba(0,0,0,.12);
-}
-
-/* ===== BUTTON ===== */
+/* BUTTON */
 button{
- width:94%;
- padding:13px;
- margin:10px;
+ width:96%;
+ padding:12px;
+ margin:10px 0;
  border-radius:14px;
  border:1px solid #000;
  background:linear-gradient(180deg,#111,#000);
  color:white;
  font-weight:600;
- transition:.25s;
  cursor:pointer;
+ transition:.2s;
 }
 
 button:hover{
- transform:translateY(-1px) scale(1.01);
- box-shadow:0 8px 16px rgba(0,0,0,.15);
+ transform:scale(1.02);
 }
 
-/* ===== STATUS ===== */
-.success{color:#008f5d;font-weight:600}
-.warn{color:#c28f00;font-weight:600}
-.fail{color:#d32f2f;font-weight:600}
+/* BADGES */
+.badge{
+ padding:6px 10px;
+ border-radius:12px;
+ font-size:13px;
+}
 
-/* ===== LOADER ===== */
+.success{background:#dcfce7;color:#065f46}
+.warn{background:#fef3c7;color:#92400e}
+.fail{background:#fee2e2;color:#7f1d1d}
+
+/* LOADER */
 .loader{
- width:24px;
- height:24px;
+ width:24px;height:24px;
  border:3px solid #eee;
  border-top:3px solid #000;
  border-radius:50%;
- animation:spin .8s linear infinite;
- margin:auto;
- display:none;
+ animation:spin .7s linear infinite;
+ display:none;margin:auto;
 }
-
-@keyframes spin{
- from{transform:rotate(0)}
- to{transform:rotate(360deg)}
-}
+@keyframes spin{to{transform:rotate(360deg)}}
+svg{display:block;margin:10px auto}
+text{font-weight:700}

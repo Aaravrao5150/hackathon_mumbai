@@ -1,133 +1,83 @@
-let stream = null;
+let stream=null;
 
-// =============== CAMERA ===============
+function updateMeter(v){
+ document.getElementById("ring")
+   .setAttribute("stroke-dasharray", v+",100");
 
-async function startCamera() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
-    });
-
-    video.srcObject = stream;
-
-    firebase.auth().onAuthStateChanged(u=>{
-      if(u) checkLoop();
-    });
-
-  } catch (e) {
-    status.innerText = "Camera denied";
-  }
+ document.getElementById("percent").innerText=v+"%";
 }
 
-function stopCamera(){
-  if(stream) stream.getTracks().forEach(t=>t.stop());
-}
+async function startCamera(){
+ stream = await navigator.mediaDevices.getUserMedia({
+   video:{facingMode:"environment"}
+ });
 
-// =============== CAPTURE ===============
+ video.srcObject = stream;
+ checkLoop();
+}
 
 function grab(){
-  let c = canvas;
-  c.width = 300; c.height = 200;
-  let x = c.getContext("2d");
-  x.drawImage(video,0,0,300,200);
-  return x.getImageData(0,0,300,200);
+ canvas.width=300; canvas.height=200;
+ let x=canvas.getContext("2d");
+ x.drawImage(video,0,0,300,200);
+ return x.getImageData(0,0,300,200);
 }
-
-// =============== FEATURE MATCH ===============
 
 function featureScore(mat){
-  let ak = new cv.AKAZE();
-  let kp = new cv.KeyPointVector();
-  let des = new cv.Mat();
-
-  ak.detectAndCompute(mat,new cv.Mat(),kp,des);
-
-  return Math.min(100, Math.round(kp.size()*1.5));
+ let ak=new cv.AKAZE();
+ let kp=new cv.KeyPointVector();
+ ak.detectAndCompute(mat,new cv.Mat(),kp,new cv.Mat());
+ return Math.min(100,Math.round(kp.size()*1.5));
 }
-
-
-// =============== ANOMALY ===============
-
-async function anomaly(roll){
-
-  let snap = await db.collection("attendance")
-    .where("roll","==",roll)
-    .where("status","==","ABSENT")
-    .orderBy("time","desc")
-    .limit(3).get();
-
-  return snap.size >= 3;
-}
-
-// =============== MAIN LOOP ===============
 
 async function checkLoop(){
 
- let user = firebase.auth().currentUser;
- let roll = user.email.split("@")[0];
+ let u=auth.currentUser;
+ let roll=u.email.split("@")[0];
 
- // load template
- let exts=[".jpeg",".jpg",".jfif",".png"];
- let ref=null;
-
- for(let e of exts){
-   let r=await fetch("templates/"+roll+e);
-   if(r.ok){ ref=r; break; }
- }
-
- if(!ref){
-   status.innerText="No template for "+roll;
+ let ref=await fetch("templates/"+roll+".jpeg");
+ if(!ref.ok){
+   status.innerText="No template found";
    return;
  }
 
- let refBlob = await ref.blob();
- let refImg  = await createImageBitmap(refBlob);
-
- let c=document.createElement("canvas");
- c.width=300; c.height=200;
- let x=c.getContext("2d");
- x.drawImage(refImg,0,0,300,200);
-
- let refMat=cv.matFromImageData(
-   x.getImageData(0,0,300,200)
- );
-
  let interval=setInterval(async()=>{
 
-   let liveMat=cv.matFromImageData(grab());
-   let idScore=featureScore(liveMat);
+   let live=cv.matFromImageData(grab());
 
-   let fScore = await faceScore();   // from face.js
+   let id=featureScore(live);
+   let face=await faceScore();
 
-   let score=Math.round(idScore*0.7+fScore*0.3);
+   let score=Math.round(id*0.7+face*0.3);
+
+   updateMeter(score);
 
    status.innerText="Similarity "+score+"%";
 
    if(score>=80){
      clearInterval(interval);
-     stopCamera();
-     markPresent(score);
+     mark(score);
    }
 
- },900);
+ },1000);
 }
 
-// =============== MARK ===============
+async function alreadyMarked(r,sid){
+ let s=await db.collection("attendance")
+  .where("roll","==",r)
+  .where("session","==",sid).get();
 
-async function markPresent(score){
+ return !s.empty;
+}
 
- let user=firebase.auth().currentUser;
- let roll=user.email.split("@")[0];
+async function mark(score){
 
- if(await anomaly(roll)){
-   status.innerText="Account blocked – repeated fails";
-   return;
- }
+ let r=auth.currentUser.email.split("@")[0];
 
- // session check
  let snap=await db.collection("sessions").get();
  let now=new Date();
- let sessionId=null, hours=0;
+
+ let sid=null, hrs=0, late=false;
 
  snap.forEach(d=>{
    let s=d.data();
@@ -135,32 +85,37 @@ async function markPresent(score){
    let en=new Date(st.getTime()+s.duration*3600*1000);
 
    if(now>=st && now<=en){
-     sessionId=d.id;
-     hours=parseFloat(s.duration);
+     sid=d.id; hrs=s.duration;
+
+     if(now-st>10*60*1000) late=true;
    }
  });
 
- if(!sessionId){
+ if(!sid){
    status.innerText="No active session";
    return;
  }
 
- // save attendance
+ if(await alreadyMarked(r,sid)){
+   status.innerText="Already marked";
+   return;
+ }
+
  await db.collection("attendance").add({
-   roll, trust:score, status:"PRESENT",
-   session:sessionId, hours,
+   roll:r,
+   session:sid,
+   trust:score,
+   status: late?"LATE":"PRESENT",
+   hours:hrs,
    time:new Date()
  });
 
- status.innerText="PRESENT ✓";
- status.className = score>=80 ? "success" : "warn";
-
+ status.innerText = late?"LATE":"PRESENT";
+ status.className = late?"warn":"success";
 }
 
-// =============== TEACHER ===============
-
+// teacher
 async function createSession(){
-
  await db.collection("sessions").add({
   subject:sub.value,
   date:date.value,
