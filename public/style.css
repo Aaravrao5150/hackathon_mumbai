@@ -1,39 +1,104 @@
+/* ===== APPLE STYLE ATTENDANCE UI ===== */
+
 body{
- background:#0b0e14;
- color:white;
- font-family:system-ui;
+ background:#f5f6f8;
+ color:#0a0a0a;
+ font-family:-apple-system, BlinkMacSystemFont,
+ "SF Pro Text","Segoe UI",system-ui;
  text-align:center;
 }
 
+/* Card container */
 .card{
- background:linear-gradient(145deg,#131820,#0f1217);
- box-shadow:0 0 20px #000;
- padding:25px;
- border-radius:16px;
+ background:linear-gradient(180deg,#ffffff,#fafafa);
+ border:1px solid #000;
+ box-shadow:
+   0 10px 25px rgba(0,0,0,.08),
+   inset 0 1px 0 rgba(255,255,255,.6);
+ padding:24px;
+ border-radius:22px;
  max-width:420px;
- margin:20px auto;
+ margin:30px auto;
+ transition:.3s ease;
 }
 
-input,select,button{
- width:90%;
- padding:12px;
+.card:hover{
+ box-shadow:
+   0 18px 35px rgba(0,0,0,.12),
+   inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+/* Inputs */
+input,select{
+ width:92%;
+ padding:13px;
  margin:8px;
- border-radius:10px;
- border:none;
- background:#0f1217;
- color:white;
+ border-radius:14px;
+ border:1px solid #000;
+ background:#fff;
+ color:#000;
+ transition:.2s;
 }
 
+input:focus,select:focus{
+ outline:none;
+ box-shadow:0 0 0 3px rgba(0,0,0,.12);
+}
+
+/* Button – Apple black pill */
 button{
- background:#00ffaa;
- color:black;
- font-weight:bold;
+ width:94%;
+ padding:13px;
+ margin:10px;
+ border-radius:14px;
+ border:1px solid #000;
+ background:linear-gradient(180deg,#111,#000);
+ color:white;
+ font-weight:600;
+ letter-spacing:.3px;
+ transition:.25s;
 }
 
-.success{color:#00ffaa}
-.warn{color:#ffc107}
-.fail{color:#ff4b4b}
+button:hover{
+ transform:translateY(-1px);
+ box-shadow:0 8px 16px rgba(0,0,0,.15);
+}
 
+/* Status colors */
+.success{
+ color:#008f5d;
+ font-weight:600;
+}
+
+.warn{
+ color:#c28f00;
+ font-weight:600;
+}
+
+.fail{
+ color:#d32f2f;
+ font-weight:600;
+}
+
+/* Title glow */
 .glow{
- text-shadow:0 0 10px #00ffaa;
+ font-weight:700;
+ letter-spacing:.5px;
+ background:linear-gradient(90deg,#000,#333);
+ -webkit-background-clip:text;
+ background-clip:text;
+ -webkit-text-fill-color:transparent;
+}
+
+/* Links */
+a{
+ color:#000;
+ text-decoration:none;
+ font-weight:600;
+ border-bottom:1px solid #000;
+}
+
+/* Smooth fade */
+*{
+ transition:all .2s ease;
 }

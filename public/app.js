@@ -1,3 +1,12 @@
+// ---------- ORB MATCH ----------
+function orbScore(mat){
+ let orb = new cv.ORB();
+ let kp = new cv.KeyPointVector();
+ let des = new cv.Mat();
+
+ orb.detectAndCompute(mat, new cv.Mat(), kp, des);
+ return Math.min(100, kp.size()*2);
+}
 
 async function realScore(file, refBlob){
  let img = await createImageBitmap(file);
@@ -26,7 +35,7 @@ async function verify(){
 
  if(!f){ alert("Capture image"); return; }
 
- let ref = await fetch("templates/"+r+".jpeg")
+ let ref = await fetch("/templates/"+r+".jpeg")
  let refBlob = await ref.blob();
 
  let idScore = await realScore(f, refBlob);
@@ -72,12 +81,3 @@ async function loadSessions(){
  });
 }
 
-// ---------- ORB MATCH ----------
-function orbScore(mat){
- let orb = new cv.ORB();
- let kp = new cv.KeyPointVector();
- let des = new cv.Mat();
-
- orb.detectAndCompute(mat, new cv.Mat(), kp, des);
- return Math.min(100, kp.size()*2);
-}
