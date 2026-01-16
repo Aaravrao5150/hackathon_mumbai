@@ -155,10 +155,17 @@ def verify():
 
 @app.route("/stats")
 def stats():
-    con=sqlite3.connect(DB)
-    return jsonify(con.execute(
-      "SELECT student,status,COUNT(*) FROM logs GROUP BY student,status"
-    ).fetchall())
+
+    con = sqlite3.connect(DB)
+
+    data = con.execute("""
+      SELECT roll, status, COUNT(*)
+      FROM attendance
+      GROUP BY roll, status
+    """).fetchall()
+
+    return jsonify(data)
+
 
 if __name__=="__main__":
     init()
