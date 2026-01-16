@@ -8,3 +8,5 @@ __pycache__/
 .vercel/
 *.zip
 impinfo.txt
+auth.js
+.firebase

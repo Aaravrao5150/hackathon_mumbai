@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<script async src="https://docs.opencv.org/4.8.0/opencv.js"></script>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Student Portal</h2>
+
+<select id="session"></select>
+
+<input type="file"
+ capture="environment"
+ accept="image/*"
+ id="cam">
+
+<button onclick="verify()">Mark Attendance</button>
+
+<h3 id="out"></h3>
+
+<a href="dashboard.html">My Analytics</a>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
