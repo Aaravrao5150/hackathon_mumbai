@@ -9,4 +9,5 @@ __pycache__/
 *.zip
 impinfo.txt
 auth.js
+firebase-init.js
 .firebase

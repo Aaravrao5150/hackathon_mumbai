@@ -1,4 +1,5 @@
-const db = firebase.firestore();
+window.db = firebase.firestore()
+
 
 // ---------- ORB MATCH ----------
 function orbScore(mat){
