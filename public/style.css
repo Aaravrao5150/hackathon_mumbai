@@ -92,3 +92,10 @@ text{font-weight:700}
 .fade{
  animation:fade .6s forwards;
 }
+h3{
+ transition:.3s;
+}
+
+#status{
+ min-height:24px;
+}

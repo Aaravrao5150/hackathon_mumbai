@@ -8,7 +8,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
 <script src="firebase-init.js"></script>
-<script src="https://docs.opencv.org/4.8.0/opencv.js"></script>
+
+<script src="https://docs.opencv.org/4.8.0/opencv.js"></script>     
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
 </head>
 
 <body>
@@ -19,7 +22,6 @@
 
 <h2>ID Verification</h2>
 
-<!-- METER -->
 <div style="position:relative">
 <svg width="140" height="140" viewBox="0 0 36 36">
   <path d="M18 2.0845
@@ -36,15 +38,14 @@
     text-anchor="middle" font-size="6">0%</text>
 </svg>
 
-<!-- REFRESH -->
-<button onclick="resetScan()" 
+<button onclick="resetScan()"
  style="position:absolute;top:0;right:0;
  width:32px;height:32px;border-radius:50%">↻</button>
 </div>
 
 <p style="font-weight:600;margin-top:6px">ATTENDANCE</p>
 
-<video id="video" autoplay playsinline style="width:100%"></video>
+<video id="video" autoplay playsinline style="width:100%"></video>      
 <canvas id="canvas" hidden></canvas>
 
 <div class="loader" id="load"></div>

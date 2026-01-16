@@ -42,6 +42,56 @@
 
 <script>
 
+// --- CONFIGURATION ---
+// REPLACE THESE WITH YOUR COLLEGE COORDINATES
+const COLLEGE_LAT = 19.0760; // Example: Mumbai
+const COLLEGE_LNG = 72.8777; 
+const ALLOWED_RADIUS = 2000; // Meters (Set strictly like 500m for production)
+
+// --- GEOMETRY UTILS ---
+function getDist(lat1, lon1, lat2, lon2) {
+  var R = 6371; // Radius of earth in km
+  var dLat = deg2rad(lat2-lat1);
+  var dLon = deg2rad(lon2-lon1); 
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Dist in km
+  return d * 1000; // Return meters
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
+
+// --- LOCATION CHECK ---
+function checkLocation(){
+    return new Promise((resolve, reject)=>{
+        if(!navigator.geolocation){
+            alert("Geolocation not supported by this browser.");
+            resolve(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition((pos)=>{
+            let dist = getDist(pos.coords.latitude, pos.coords.longitude, COLLEGE_LAT, COLLEGE_LNG);
+            console.log("Distance:", dist, "meters");
+
+            if(dist <= ALLOWED_RADIUS){
+                resolve(true);
+            } else {
+                alert("You are too far from campus (" + Math.round(dist) + "m). Attendance denied.");
+                resolve(false);
+            }
+        }, (err)=>{
+            alert("Location permission required.");
+            resolve(false);
+        }, {enableHighAccuracy:true});
+    });
+}
+
+
 let steps=[
  "Ensuring GPS location integrity",
  "Checking browser security",
@@ -51,11 +101,23 @@ let steps=[
 
 let i=0;
 
-function run(){
+async function run(){
+
+ // INTELLIGENT CHECK AT STEP 0
+ if(i==0){
+    let allowed = await checkLocation();
+    // If not allowed, we stop here (in production). 
+    // For testing, we might just warn.
+    if(!allowed) {
+        document.getElementById("msg").innerText = "LOCATION CHECK FAILED";
+        document.querySelector(".loader").style.display="none";
+        return; 
+    }
+ }
 
  if(i<steps.length){
    document.getElementById("msg").innerText=steps[i];
-   document.getElementById("s"+(i+1)).innerText="✔ "+steps[i];
+   document.getElementById("s"+(i+1)).innerText="✔ "+steps[i];       
    i++;
    setTimeout(run,900);
  }
