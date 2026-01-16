@@ -1,7 +1,6 @@
 let stream = null;
 
-// ================= CAMERA =================
-
+// ===== CAMERA =====
 async function startCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -10,8 +9,9 @@ async function startCamera() {
 
     video.srcObject = stream;
 
-    // start continuous verification
-    checkLoop();
+    firebase.auth().onAuthStateChanged(u=>{
+      if(u) checkLoop();
+    });
 
   } catch (e) {
     status.innerText = "Camera access denied";
@@ -19,168 +19,138 @@ async function startCamera() {
 }
 
 function stopCamera() {
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-  }
+  if (stream) stream.getTracks().forEach(t => t.stop());
 }
 
-// ================= FRAME CAPTURE =================
-
+// ===== FRAME =====
 function grab() {
   let c = document.getElementById("canvas");
-  c.width = 300;
-  c.height = 200;
+  c.width = 300; c.height = 200;
 
   let x = c.getContext("2d");
-  x.drawImage(video, 0, 0, 300, 200);
+  x.drawImage(video,0,0,300,200);
 
-  return x.getImageData(0, 0, 300, 200);
+  return x.getImageData(0,0,300,200);
 }
 
-// ================= ORB MATCH =================
-
+// ===== ORB =====
 function orbScore(mat) {
-  let orb = cv.ORB_create();
-
+  let orb = cv.ORB_create();   // ✅ correct
   let kp = new cv.KeyPointVector();
   let des = new cv.Mat();
 
-  orb.detectAndCompute(mat, new cv.Mat(), kp, des);
+  orb.detectAndCompute(mat,new cv.Mat(),kp,des);
 
-  return Math.min(100, kp.size() * 2);
+  return Math.min(100, kp.size()*2);
 }
 
-// ================= MAIN VERIFICATION LOOP =================
-
+// ===== MAIN LOOP =====
 async function checkLoop() {
 
   let user = firebase.auth().currentUser;
-  if (!user) {
-    status.innerText = "Login first";
+  if(!user){
+    status.innerText="Login first";
     return;
   }
 
   let roll = user.email.split("@")[0];
 
-  // ----- LOAD TEMPLATE (ANY FORMAT) -----
+  // ---- load template from PUBLIC folder ----
+  let exts=[".jpeg",".jpg",".jfif",".png"];
+  let ref=null;
 
-  let exts = [".jpeg", ".jpg", ".jfif", ".png"];
-  let ref = null;
-
-  for (let e of exts) {
-    let r = await fetch("/templates/" + roll + e);
-    if (r.ok) {
-      ref = r;
-      break;
-    }
+  for(let e of exts){
+    let r = await fetch("templates/"+roll+e); // ✅ relative path
+    if(r.ok){ ref=r; break; }
   }
 
-  if (!ref) {
-    status.innerText = "No template found for " + roll;
+  if(!ref){
+    status.innerText="No template for "+roll;
     return;
   }
 
   let refBlob = await ref.blob();
-  let refImg = await createImageBitmap(refBlob);
+  let refImg  = await createImageBitmap(refBlob);
 
-  // convert template to mat
-  let c = document.createElement("canvas");
-  c.width = 300;
-  c.height = 200;
+  let c=document.createElement("canvas");
+  c.width=300; c.height=200;
 
-  let x = c.getContext("2d");
-  x.drawImage(refImg, 0, 0, 300, 200);
+  let x=c.getContext("2d");
+  x.drawImage(refImg,0,0,300,200);
 
-  let refData = x.getImageData(0, 0, 300, 200);
-  let refMat = cv.matFromImageData(refData);
+  let refMat=cv.matFromImageData(
+    x.getImageData(0,0,300,200)
+  );
 
-  // ----- CONTINUOUS CHECK -----
+  let interval=setInterval(()=>{
 
-  let interval = setInterval(() => {
+    let liveMat=cv.matFromImageData(grab());
+    let score=orbScore(liveMat);
 
-    let liveData = grab();
-    let liveMat = cv.matFromImageData(liveData);
+    status.innerText="Similarity: "+score+"%";
 
-    let score = orbScore(liveMat);
-
-    status.innerText = "Similarity: " + score + "%";
-
-    if (score >= 80) {
+    if(score>=80){
       clearInterval(interval);
       stopCamera();
       markPresent(score);
     }
 
-  }, 800);
+  },900);
 }
 
-// ================= MARK ATTENDANCE =================
+// ===== ATTENDANCE =====
+async function markPresent(score){
 
-async function markPresent(score) {
-
-  // ---- RATE LIMIT ----
-  let last = localStorage.getItem("att");
-  if (last && Date.now() - last < 20000) {
-    status.innerText = "Wait 20 sec before retry";
+  let last=localStorage.getItem("att");
+  if(last && Date.now()-last<20000){
+    status.innerText="Wait 20 sec";
     return;
   }
-  localStorage.setItem("att", Date.now());
+  localStorage.setItem("att",Date.now());
 
-  let user = firebase.auth().currentUser;
-  let roll = user.email.split("@")[0];
+  let roll=firebase.auth()
+          .currentUser.email.split("@")[0];
 
-  // ----- CHECK ACTIVE SESSION -----
+  let snap=await db.collection("sessions").get();
 
-  let snap = await db.collection("sessions").get();
+  let now=new Date();
+  let valid=false, hours=0;
 
-  let now = new Date();
+  snap.forEach(d=>{
+    let s=d.data();
 
-  let valid = false;
-  let hours = 0;
+    let st=new Date(s.date+"T"+s.start);
+    let en=new Date(st.getTime()
+           + s.duration*3600000);
 
-  snap.forEach(d => {
-
-    let s = d.data();
-
-    let start = new Date(s.date + "T" + s.start);
-    let end = new Date(start.getTime() + s.duration * 3600 * 1000);
-
-    if (now >= start && now <= end) {
-      valid = true;
-      hours = parseFloat(s.duration);
+    if(now>=st && now<=en){
+      valid=true;
+      hours=parseFloat(s.duration);
     }
-
   });
 
-  if (!valid) {
-    status.innerText = "No active session now";
+  if(!valid){
+    status.innerText="No active session";
     return;
   }
-
-  // ----- SAVE RECORD -----
 
   await db.collection("attendance").add({
-    roll: roll,
-    trust: score,
-    status: "PRESENT",
-    hours: hours,
-    time: new Date()
+    roll, trust:score,
+    status:"PRESENT",
+    hours, time:new Date()
   });
 
-  status.innerText = "PRESENT ✓";
-  status.className = "success";
+  status.innerText="PRESENT ✓";
+  status.className="success";
 }
 
-// ================= TEACHER =================
-
-async function createSession() {
-
-  await db.collection("sessions").add({
-    subject: sub.value,
-    date: date.value,
-    start: start.value,
-    duration: dur.value
-  });
-
-  alert("Session Created");
+// ===== TEACHER =====
+async function createSession(){
+ await db.collection("sessions").add({
+  subject:sub.value,
+  date:date.value,
+  start:start.value,
+  duration:dur.value
+ });
+ alert("Session Created");
 }
