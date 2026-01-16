@@ -55,8 +55,14 @@ def log(student, status, reason):
 def home():
     return render_template("index.html")
 
-@app.route("/start/<student>")
+@app.route("/start/<student>", methods=["GET","POST"])
 def start(student):
+
+    # if image uploaded from phone
+    if request.files:
+        img = request.files["img"]
+        path = "uploaded.jpg"
+        img.save(path)
 
     id_data = scan_id_for(student)
 
@@ -66,9 +72,7 @@ def start(student):
     if isinstance(id_data, dict) and "error" in id_data:
         return jsonify({"status":"FAIL","reason":id_data["error"],"student":student})
 
-    face = verify_face()
-
-    result, reason = evaluate(face, id_data, False, True)
+    result, reason = evaluate(True, id_data, False, True)
 
     log(student, result, reason)
 
@@ -77,6 +81,7 @@ def start(student):
         "reason": reason,
         "student": student
     })
+
 
 @app.route("/stats")
 def stats():

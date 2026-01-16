@@ -5,45 +5,23 @@
 
 <style>
 body{
-  background:#0e0f14;
-  color:white;
-  font-family:system-ui;
-  text-align:center;
+ background:#0e0f14;
+ color:white;
+ font-family:system-ui;
+ text-align:center;
 }
 
 .card{
-  background:#161b22;
-  padding:20px;
-  margin:40px auto;
-  width:420px;
-  border-radius:14px;
-  box-shadow:0 0 20px #00ffaa22;
-}
-
-input{
-  padding:10px;
-  width:80%;
-  border-radius:8px;
-  border:none;
-  margin:10px;
-}
-
-button{
-  padding:10px 20px;
-  background:#00ffaa;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
-}
-
-#status{
-  font-size:22px;
-  margin-top:10px;
+ background:#161b22;
+ padding:20px;
+ margin:40px auto;
+ width:90%;
+ max-width:420px;
+ border-radius:14px;
 }
 
 .success{color:#00ff99}
 .fail{color:#ff4b4b}
-.warn{color:#ffcc00}
 </style>
 
 </head>
@@ -51,32 +29,61 @@ button{
 <body>
 
 <div class="card">
-<h2>🎓 Intelligent Attendance</h2>
 
-<input id="roll" placeholder="Enter Roll (101 / 102)">
-<button onclick="start()">Start Verification</button>
+<h2>📱 Smart Attendance</h2>
+
+<input id="roll" placeholder="Roll (101/102)">
+
+<br><br>
+
+<input type="file"
+       accept="image/*"
+       capture="environment"
+       id="cam">
+
+<br><br>
+
+<button onclick="start()">Verify</button>
 
 <div id="status"></div>
 <pre id="out"></pre>
 
-<a href="/stats" style="color:#00ffaa">View Dashboard →</a>
+<a href="/stats" style="color:#00ffaa">Dashboard</a>
+
 </div>
 
 <script>
 function start(){
+
  let r=document.getElementById("roll").value
 
- fetch('/start/'+r)
+ if(!r){
+   alert("Enter roll first")
+   return
+ }
+
+ let file=document.getElementById("cam").files[0]
+
+ if(!file){
+   alert("Take photo of ID")
+   return
+ }
+
+ let form=new FormData()
+ form.append("img",file)
+
+ fetch('/start/'+r,{
+   method:'POST',
+   body:form
+ })
  .then(x=>x.json())
  .then(d=>{
 
    let s=document.getElementById("status")
-
    s.innerText=d.status
 
    s.className=
-     d.status=="SUCCESS"?"success":
-     d.status=="SUSPICIOUS"?"warn":"fail"
+     d.status=="SUCCESS"?"success":"fail"
 
    document.getElementById("out").innerText=
      JSON.stringify(d,null,2)
