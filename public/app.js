@@ -1,15 +1,3 @@
-window.db = firebase.firestore()
-
-
-// ---------- ORB MATCH ----------
-function orbScore(mat){
- let orb = new cv.ORB();
- let kp = new cv.KeyPointVector();
- let des = new cv.Mat();
-
- orb.detectAndCompute(mat, new cv.Mat(), kp, des);
- return Math.min(100, kp.size()*2);
-}
 
 async function realScore(file, refBlob){
  let img = await createImageBitmap(file);
@@ -82,4 +70,14 @@ async function loadSessions(){
    o.innerText = d.data().subject+" "+d.data().date;
    s.appendChild(o);
  });
+}
+
+// ---------- ORB MATCH ----------
+function orbScore(mat){
+ let orb = new cv.ORB();
+ let kp = new cv.KeyPointVector();
+ let des = new cv.Mat();
+
+ orb.detectAndCompute(mat, new cv.Mat(), kp, des);
+ return Math.min(100, kp.size()*2);
 }
