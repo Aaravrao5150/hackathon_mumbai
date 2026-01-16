@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#0e0f14;color:white;font-family:system-ui">
+
+<h2>Teacher Panel</h2>
+
+<h3>Add Student</h3>
+
+<form action="/teacher/add_student" method="POST" enctype="multipart/form-data">
+
+Roll: <input name="roll"><br><br>
+Name: <input name="name"><br><br>
+
+ID Card:  
+<input type="file" name="id" accept="image/*"><br><br>
+
+Face Photo:  
+<input type="file" name="face" accept="image/*"><br><br>
+
+<button>Add Student</button>
+
+</form>
+
+<br>
+
+<a href="/teacher/sessions">Create Sessions</a>
+
+</body>
+</html>

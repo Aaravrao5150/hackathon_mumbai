@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 import sqlite3, datetime
 from flask import session, redirect
+import os
+UPLOAD="dataset"
 
 app = Flask(__name__, template_folder="../frontend/templates")
 
@@ -54,9 +56,39 @@ def init():
     con.commit()
 
 
+@app.route("/teacher")
+def teacher_home():
+    if teacher_only(): return redirect("/login")
+    return render_template("teacher.html")
 @app.route("/")
 def home():
     return render_template("index.html")
+@app.route("/teacher/add_student",methods=["POST"])
+def add_student():
+
+ if teacher_only(): return redirect("/login")
+
+ roll=request.form["roll"]
+ name=request.form["name"]
+
+ idf=request.files["id"]
+ facef=request.files["face"]
+
+ id_path=f"{UPLOAD}/id_cards/{roll}.jpg"
+ face_path=f"{UPLOAD}/registered_faces/{roll}.jpg"
+
+ idf.save(id_path)
+ facef.save(face_path)
+
+ con=sqlite3.connect(DB)
+
+ con.execute("""
+ INSERT INTO students VALUES(?,?,?,?)
+ """,(roll,name,face_path,id_path))
+
+ con.commit()
+
+ return "Added"
 
 def anomaly(student):
     con=sqlite3.connect(DB)
