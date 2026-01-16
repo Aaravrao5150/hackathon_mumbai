@@ -1,13 +1,11 @@
-dataset/
+templates/
 *.jpg
 *.jpeg
 *.png
 *.db
 __pycache__/
 .venv/
-.vercel/
 *.zip
-impinfo.txt
 auth.js
 firebase-init.js
-.firebase
+*.firebase

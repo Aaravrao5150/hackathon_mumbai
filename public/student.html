@@ -3,42 +3,40 @@
 <head>
 <link rel="stylesheet" href="style.css">
 
-<!-- 1) Firebase SDKs -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
-<!-- 2) Init -->
 <script src="firebase-init.js"></script>
 
-<!-- 3) OpenCV -->
+<!-- OpenCV -->
 <script src="https://docs.opencv.org/4.8.0/opencv.js"></script>
-
-<!-- 4) App logic ONCE -->
-<script src="app.js"></script>
-
 </head>
 
-<body onload="loadSessions()">
+<body>
 
 <div class="card">
 
-<h2>Student Portal</h2>
+<h2 class="glow">ID Verification</h2>
 
 <select id="session"></select>
 
-<input type="file"
- capture="environment"
- accept="image/*"
- id="cam">
+<!-- LIVE CAMERA -->
+<video id="video" autoplay playsinline
+ style="width:100%;border:1px solid #000;border-radius:14px"></video>
 
-<button onclick="verify()">Mark Attendance</button>
+<canvas id="canvas" hidden></canvas>
 
-<h3 id="out"></h3>
+<h3 id="status">Waiting...</h3>
 
-<a href="dashboard.html">My Analytics</a>
+<button onclick="startCamera()">Start Camera</button>
+
+<a href="dashboard.html">My Attendance</a>
 
 </div>
+
+<script src="app.js"></script>
 
 </body>
 </html>

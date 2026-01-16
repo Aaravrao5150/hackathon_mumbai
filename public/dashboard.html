@@ -1,50 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- SDK FIRST -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-
-<!-- THEN INIT -->
-<script src="firebase-init.js"></script>
-
-</head>
-
-<body>
-
 <div class="card">
-<h2 class="glow">Analytics</h2>
-<canvas id="c"></canvas>
+<h2>Hours Report</h2>
+<div id="rep"></div>
 </div>
 
 <script>
-db.collection("attendance").get().then(s=>{
+async function load(){
 
- let labels=[],vals=[];
+ let user=auth.currentUser;
+ let roll=user.email.split("@")[0];
 
- s.forEach(d=>{
-   labels.push(d.data().roll+"-"+d.data().status);
-   vals.push(d.data().trust);
+ let snap=await db.collection("attendance")
+            .where("roll","==",roll).get();
+
+ let total=0;
+
+ snap.forEach(d=>{
+   total+=d.data().hours||0;
  });
 
- new Chart(document.getElementById("c"),{
-   type:'bar',
-   data:{
-     labels:labels,
-     datasets:[{
-        label:'Trust',
-        data:vals,
-        backgroundColor:'#00ffaa'
-     }]
-   }
- });
+ rep.innerHTML="Total Hours: <b>"+total+"</b>";
+}
 
-});
+auth.onAuthStateChanged(load);
 </script>
-
-</body>
-</html>
