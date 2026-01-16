@@ -1,25 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase-init.js"></script>
+</head>
+
+<body>
+
+<div class="topbar">SMART ATTENDANCE SYSTEM</div>
+
 <div class="card">
-<h2>Hours Report</h2>
-<div id="rep"></div>
+
+<h2>Attendance Report</h2>
+
+<button onclick="exportCSV()">Download CSV</button>
+
+<h3>Per Session</h3>
+<div id="roster"></div>
+
+<h3>Total Hours</h3>
+<div id="hours"></div>
+
 </div>
 
 <script>
 async function load(){
 
- let user=auth.currentUser;
- let roll=user.email.split("@")[0];
+ let sess = await db.collection("sessions").get();
+ let att  = await db.collection("attendance").get();
 
- let snap=await db.collection("attendance")
-            .where("roll","==",roll).get();
+ let html="";
 
- let total=0;
+ sess.forEach(s=>{
+   html+=`<h4>${s.data().subject} - ${s.data().date}</h4>`;
 
- snap.forEach(d=>{
-   total+=d.data().hours||0;
+   att.forEach(a=>{
+     if(a.data().session==s.id){
+       html+=`${a.data().roll} - ${a.data().status}<br>`;
+     }
+   });
  });
 
- rep.innerHTML="Total Hours: <b>"+total+"</b>";
+ roster.innerHTML=html;
+
+ let map={};
+
+ att.forEach(a=>{
+   let r=a.data().roll;
+   map[r]=(map[r]||0)+(a.data().hours||0);
+ });
+
+ let h="";
+ for(let r in map)
+   h+=`${r} : ${map[r]} hrs<br>`;
+
+ hours.innerHTML=h;
 }
 
-auth.onAuthStateChanged(load);
+async function exportCSV(){
+
+ let snap=await db.collection("attendance").get();
+
+ let csv="roll,status,trust,hours,time\n";
+
+ snap.forEach(d=>{
+  let x=d.data();
+  csv+=`${x.roll},${x.status},${x.trust},${x.hours},${x.time.toDate()}\n`;
+ });
+
+ let a=document.createElement("a");
+ a.href="data:text/csv,"+encodeURIComponent(csv);
+ a.download="attendance.csv";
+ a.click();
+}
+
+load();
 </script>
+
+</body>
+</html>

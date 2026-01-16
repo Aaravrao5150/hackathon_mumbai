@@ -5,14 +5,19 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
 <script src="firebase-init.js"></script>
 </head>
 
 <body>
 
+<div class="topbar">SMART ATTENDANCE SYSTEM</div>
+
 <div class="card">
 
 <h2>Teacher Panel</h2>
+
+<h3>Create Session</h3>
 
 Subject<input id="sub">
 Date<input type="date" id="date">
@@ -21,19 +26,16 @@ Hours<input id="dur">
 
 <button onclick="createSession()">Create Session</button>
 
+<a href="dashboard.html">View Reports</a>
+
+<p style="font-size:12px;margin-top:10px">
+Student ID templates are maintained in  
+/public/templates/ROLL.jpeg
+</p>
+
 </div>
 
-<script>
-async function createSession(){
- await db.collection("sessions").add({
-  subject:sub.value,
-  date:date.value,
-  start:start.value,
-  duration:dur.value
- });
- alert("Session Created");
-}
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>

@@ -5,23 +5,28 @@
 </head>
 
 <body>
+
+<div class="topbar">SMART ATTENDANCE SYSTEM</div>
+
 <div class="card">
 
-<h2 class="glow">Smart Attendance</h2>
+<h2>Select Role</h2>
 
-<input id="email" placeholder="email">
-<input id="pass" type="password">
+<select id="role">
+  <option value="student">Student</option>
+  <option value="teacher">Teacher</option>
+</select>
 
-<button onclick="login()">Login</button>
+<button onclick="go()">Continue</button>
 
 </div>
 
-<!-- ✅ ONLY COMPAT – NO MODULE -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script src="firebase-init.js"></script>
-<script src="auth.js"></script>
+<script>
+function go(){
+ let r = role.value;
+ location = r=="student" ? "student.html" : "teacher.html";
+}
+</script>
 
 </body>
 </html>

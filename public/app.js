@@ -1,6 +1,7 @@
 let stream = null;
 
-// ===== CAMERA =====
+// =============== CAMERA ===============
+
 async function startCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -14,143 +15,158 @@ async function startCamera() {
     });
 
   } catch (e) {
-    status.innerText = "Camera access denied";
+    status.innerText = "Camera denied";
   }
 }
 
-function stopCamera() {
-  if (stream) stream.getTracks().forEach(t => t.stop());
+function stopCamera(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
 }
 
-// ===== FRAME =====
-function grab() {
-  let c = document.getElementById("canvas");
-  c.width = 300; c.height = 200;
+// =============== CAPTURE ===============
 
+function grab(){
+  let c = canvas;
+  c.width = 300; c.height = 200;
   let x = c.getContext("2d");
   x.drawImage(video,0,0,300,200);
-
   return x.getImageData(0,0,300,200);
 }
 
-// ===== ORB =====
-function orbScore(mat) {
-  let orb = cv.ORB_create();   // ✅ correct
+// =============== FEATURE MATCH ===============
+
+function featureScore(mat){
+  let ak = new cv.AKAZE();
   let kp = new cv.KeyPointVector();
   let des = new cv.Mat();
 
-  orb.detectAndCompute(mat,new cv.Mat(),kp,des);
+  ak.detectAndCompute(mat,new cv.Mat(),kp,des);
 
-  return Math.min(100, kp.size()*2);
+  return Math.min(100, Math.round(kp.size()*1.5));
 }
 
-// ===== MAIN LOOP =====
-async function checkLoop() {
 
-  let user = firebase.auth().currentUser;
-  if(!user){
-    status.innerText="Login first";
-    return;
-  }
+// =============== ANOMALY ===============
 
-  let roll = user.email.split("@")[0];
+async function anomaly(roll){
 
-  // ---- load template from PUBLIC folder ----
-  let exts=[".jpeg",".jpg",".jfif",".png"];
-  let ref=null;
+  let snap = await db.collection("attendance")
+    .where("roll","==",roll)
+    .where("status","==","ABSENT")
+    .orderBy("time","desc")
+    .limit(3).get();
 
-  for(let e of exts){
-    let r = await fetch("templates/"+roll+e); // ✅ relative path
-    if(r.ok){ ref=r; break; }
-  }
-
-  if(!ref){
-    status.innerText="No template for "+roll;
-    return;
-  }
-
-  let refBlob = await ref.blob();
-  let refImg  = await createImageBitmap(refBlob);
-
-  let c=document.createElement("canvas");
-  c.width=300; c.height=200;
-
-  let x=c.getContext("2d");
-  x.drawImage(refImg,0,0,300,200);
-
-  let refMat=cv.matFromImageData(
-    x.getImageData(0,0,300,200)
-  );
-
-  let interval=setInterval(()=>{
-
-    let liveMat=cv.matFromImageData(grab());
-    let score=orbScore(liveMat);
-
-    status.innerText="Similarity: "+score+"%";
-
-    if(score>=80){
-      clearInterval(interval);
-      stopCamera();
-      markPresent(score);
-    }
-
-  },900);
+  return snap.size >= 3;
 }
 
-// ===== ATTENDANCE =====
+// =============== MAIN LOOP ===============
+
+async function checkLoop(){
+
+ let user = firebase.auth().currentUser;
+ let roll = user.email.split("@")[0];
+
+ // load template
+ let exts=[".jpeg",".jpg",".jfif",".png"];
+ let ref=null;
+
+ for(let e of exts){
+   let r=await fetch("templates/"+roll+e);
+   if(r.ok){ ref=r; break; }
+ }
+
+ if(!ref){
+   status.innerText="No template for "+roll;
+   return;
+ }
+
+ let refBlob = await ref.blob();
+ let refImg  = await createImageBitmap(refBlob);
+
+ let c=document.createElement("canvas");
+ c.width=300; c.height=200;
+ let x=c.getContext("2d");
+ x.drawImage(refImg,0,0,300,200);
+
+ let refMat=cv.matFromImageData(
+   x.getImageData(0,0,300,200)
+ );
+
+ let interval=setInterval(async()=>{
+
+   let liveMat=cv.matFromImageData(grab());
+   let idScore=featureScore(liveMat);
+
+   let fScore = await faceScore();   // from face.js
+
+   let score=Math.round(idScore*0.7+fScore*0.3);
+
+   status.innerText="Similarity "+score+"%";
+
+   if(score>=80){
+     clearInterval(interval);
+     stopCamera();
+     markPresent(score);
+   }
+
+ },900);
+}
+
+// =============== MARK ===============
+
 async function markPresent(score){
 
-  let last=localStorage.getItem("att");
-  if(last && Date.now()-last<20000){
-    status.innerText="Wait 20 sec";
-    return;
-  }
-  localStorage.setItem("att",Date.now());
+ let user=firebase.auth().currentUser;
+ let roll=user.email.split("@")[0];
 
-  let roll=firebase.auth()
-          .currentUser.email.split("@")[0];
+ if(await anomaly(roll)){
+   status.innerText="Account blocked – repeated fails";
+   return;
+ }
 
-  let snap=await db.collection("sessions").get();
+ // session check
+ let snap=await db.collection("sessions").get();
+ let now=new Date();
+ let sessionId=null, hours=0;
 
-  let now=new Date();
-  let valid=false, hours=0;
+ snap.forEach(d=>{
+   let s=d.data();
+   let st=new Date(s.date+"T"+s.start);
+   let en=new Date(st.getTime()+s.duration*3600*1000);
 
-  snap.forEach(d=>{
-    let s=d.data();
+   if(now>=st && now<=en){
+     sessionId=d.id;
+     hours=parseFloat(s.duration);
+   }
+ });
 
-    let st=new Date(s.date+"T"+s.start);
-    let en=new Date(st.getTime()
-           + s.duration*3600000);
+ if(!sessionId){
+   status.innerText="No active session";
+   return;
+ }
 
-    if(now>=st && now<=en){
-      valid=true;
-      hours=parseFloat(s.duration);
-    }
-  });
+ // save attendance
+ await db.collection("attendance").add({
+   roll, trust:score, status:"PRESENT",
+   session:sessionId, hours,
+   time:new Date()
+ });
 
-  if(!valid){
-    status.innerText="No active session";
-    return;
-  }
+ status.innerText="PRESENT ✓";
+ status.className = score>=80 ? "success" : "warn";
 
-  await db.collection("attendance").add({
-    roll, trust:score,
-    status:"PRESENT",
-    hours, time:new Date()
-  });
-
-  status.innerText="PRESENT ✓";
-  status.className="success";
 }
 
-// ===== TEACHER =====
+// =============== TEACHER ===============
+
 async function createSession(){
+
  await db.collection("sessions").add({
   subject:sub.value,
   date:date.value,
   start:start.value,
   duration:dur.value
  });
+
  alert("Session Created");
 }
