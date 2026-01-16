@@ -1,8 +1,4 @@
 flask
-opencv-python
-deepface
-pyzbar
+opencv-python-headless
 numpy
-pandas
-cryptography
 scikit-image
