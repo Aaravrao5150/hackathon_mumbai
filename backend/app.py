@@ -1,7 +1,6 @@
 from flask import Flask, render_template, jsonify
 import sqlite3, datetime, os, sys
 
-# Make imports work
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from services.id_service import scan_id
@@ -10,12 +9,22 @@ from services.fingerprint_service import verify_fingerprint
 from services.fusion_service import evaluate
 from security.liveness import check
 
-app = Flask(
-    __name__,
-    template_folder="../frontend/templates"
-)
+app = Flask(__name__, template_folder="../frontend/templates")
 
 DB = os.path.join(os.path.dirname(__file__), "database.db")
+
+
+def init_db():
+    con = sqlite3.connect(DB)
+    con.execute("""
+    CREATE TABLE IF NOT EXISTS logs(
+        student TEXT,
+        time TEXT,
+        status TEXT,
+        reason TEXT
+    )
+    """)
+    con.commit()
 
 
 def log(student, status, reason):
@@ -66,8 +75,8 @@ def stats():
     con = sqlite3.connect(DB)
 
     data = con.execute("""
-        SELECT status, COUNT(*) 
-        FROM logs 
+        SELECT status, COUNT(*)
+        FROM logs
         GROUP BY status
     """).fetchall()
 
@@ -75,4 +84,5 @@ def stats():
 
 
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True)

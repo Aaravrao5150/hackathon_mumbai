@@ -4,3 +4,4 @@ deepface
 pyzbar
 numpy
 pandas
+cryptography

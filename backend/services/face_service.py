@@ -15,9 +15,11 @@ def verify_face():
     live = os.path.join(BASE, "live.jpg")
     cv2.imwrite(live, frame)
 
-    ref = os.path.join(
-        BASE, "dataset/registered_faces/me.jpg"
-    )
+    ref = os.path.join(BASE, "dataset/registered_faces/me.jpg")
+
+    if not os.path.exists(ref):
+        print("Reference image missing:", ref)
+        return False
 
     try:
         result = DeepFace.verify(
@@ -26,8 +28,8 @@ def verify_face():
             model_name="VGG-Face"
         )
 
-        return result["verified"]
+        return result.get("verified", False)
 
     except Exception as e:
-        print("FACE ERROR:", e)
+        print("Face error:", e)
         return False
