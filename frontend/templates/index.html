@@ -1,0 +1,18 @@
+<h2>Smart Attendance</h2>
+
+<button onclick="mark()">Mark Attendance</button>
+
+<pre id="out"></pre>
+
+<a href="/dashboard">View Dashboard</a>
+
+<script>
+function mark(){
+ fetch('/mark',{method:'POST'})
+ .then(r=>r.json())
+ .then(d=>{
+   document.getElementById('out').innerText =
+     JSON.stringify(d,null,2)
+ })
+}
+</script>

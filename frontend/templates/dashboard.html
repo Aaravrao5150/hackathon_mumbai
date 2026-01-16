@@ -1,0 +1,24 @@
+<h2>Analytics</h2>
+
+<canvas id="c"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+fetch('/stats')
+.then(r=>r.json())
+.then(d=>{
+
+ labels = d.map(x=>x[0])
+ vals = d.map(x=>x[1])
+
+ new Chart(document.getElementById("c"),{
+   type:'bar',
+   data:{
+     labels:labels,
+     datasets:[{label:'Records', data:vals}]
+   }
+ })
+
+})
+</script>
