@@ -4,19 +4,22 @@ const app=firebase.initializeApp({
  projectId:"attendance-smart-86930"
 })
 
-const auth=firebase.auth()
+
+const auth = firebase.auth();
 
 function login(){
 
  auth.signInWithEmailAndPassword(
-   email.value,pass.value
+   email.value,
+   pass.value
  )
- .then(u=>{
+ .then(()=>{
 
-  if(email.value.includes("teacher"))
-     location="teacher.html"
-  else
-     location="student.html"
+   if(email.value.includes("teacher"))
+      location="teacher.html";
+   else
+      location="student.html";
 
  })
+ .catch(e=>alert(e.message));
 }
