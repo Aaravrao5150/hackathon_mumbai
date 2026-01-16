@@ -1,95 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Smart Attendance</title>
+<input type="file" accept="image/*" capture="environment" id="cam">
 
-<style>
-body{
- background:#0e0f14;
- color:white;
- font-family:system-ui;
- text-align:center;
-}
-
-.card{
- background:#161b22;
- padding:20px;
- margin:40px auto;
- width:90%;
- max-width:420px;
- border-radius:14px;
-}
-
-.success{color:#00ff99}
-.fail{color:#ff4b4b}
-</style>
-
-</head>
-
-<body>
-
-<div class="card">
-
-<h2>📱 Smart Attendance</h2>
-
-<input id="roll" placeholder="Roll (101/102)">
-
-<br><br>
-
-<input type="file"
-       accept="image/*"
-       capture="environment"
-       id="cam">
-
-<br><br>
-
-<button onclick="start()">Verify</button>
-
-<div id="status"></div>
-<pre id="out"></pre>
-
-<a href="/stats" style="color:#00ffaa">Dashboard</a>
-
-</div>
+<script src="https://cdn.jsdelivr.net/npm/ssim.js"></script>
 
 <script>
-function start(){
+async function verify(){
 
- let r=document.getElementById("roll").value
+ let img=document.getElementById("cam").files[0]
 
- if(!r){
-   alert("Enter roll first")
-   return
- }
+ // browser-side mock match
+ let score=Math.floor(Math.random()*30)+70
 
- let file=document.getElementById("cam").files[0]
+ let status=score>80?"SUCCESS":"SUSPICIOUS"
 
- if(!file){
-   alert("Take photo of ID")
-   return
- }
-
- let form=new FormData()
- form.append("img",file)
-
- fetch('/start/'+r,{
+ await fetch('/log',{
    method:'POST',
-   body:form
- })
- .then(x=>x.json())
- .then(d=>{
-
-   let s=document.getElementById("status")
-   s.innerText=d.status
-
-   s.className=
-     d.status=="SUCCESS"?"success":"fail"
-
-   document.getElementById("out").innerText=
-     JSON.stringify(d,null,2)
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({status,score,student:roll})
  })
 }
 </script>
-
-</body>
-</html>
